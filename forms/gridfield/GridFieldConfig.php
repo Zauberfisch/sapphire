@@ -66,6 +66,8 @@ class GridFieldConfig {
 	 */
 	public function addComponents() {
 		$components = func_get_args();
+		if (count($components) == 1 && is_array($components[0]))
+			$components = $components[0];
 		foreach($components as $component) $this->addComponent($component);
 		return $this;
 	}
