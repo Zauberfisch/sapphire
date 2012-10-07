@@ -390,7 +390,9 @@ class GridField extends FormField {
 		$columns = array();
 		foreach($this->getComponents() as $item) {
 			if($item instanceof GridField_ColumnProvider) {
-				$item->augmentColumns($this, $columns);
+				$newColumns = $item->augmentColumns($this, $columns);
+				if (is_array($newColumns))
+					$columns = $newColumns;
 			}
 		}
 
