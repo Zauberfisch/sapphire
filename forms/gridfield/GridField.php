@@ -70,7 +70,13 @@ class GridField extends FormField {
 	 * Map of callbacks for custom data fields
 	 */
 	protected $customDataFields = array();
-
+	/**
+	 * @var string
+	 */
+	protected $rowTemplate = 'GridField_Item';
+	/**
+	 * @var string
+	 */
 	protected $name = '';
 
 	/**
@@ -232,6 +238,24 @@ class GridField extends FormField {
 	}
 
 	/**
+	 * Set the template name for rendering a single row
+	 * @param string $template
+	 * @return GridField $this
+	 */
+	public function setRowTemplate($template) {
+		$this->rowTemplate = $template;
+		return $this;
+	}
+
+	/**
+	 * Get the template name for rendering a single row
+	 * @return string
+	 */
+	public function getRowTemplate() {
+		return $this->rowTemplate;
+	}
+
+	/**
 	 * Returns the whole gridfield rendered with all the attached components
 	 *
 	 * @return string
@@ -333,31 +357,40 @@ class GridField extends FormField {
 				if(!$record->canView()) {
 					continue;
 				}
-				$rowContent = '';
+				$first = $idx == 0;
+				$last = $idx == $total - 1;
+				$row = ArrayData::create(array(
+					// TODO we shouldn't duplicate SSViewer logic here (First, Last, EvenOdd, ...)
+					'Fields' => ArrayList::create(),
+					'Record' => $record,
+					'GridField' => $this,
+					'EvenOdd' => $idx % 2 ? 'even' : 'odd',
+					'First' =>  $first,
+					'Last' =>  $last,
+					'FirstLast' => ($first ? 'first' : '') . ($first && $last ? ' ' : '')  . ($last ? 'last' : ''),
+					'Pos' => $idx,
+					'TotalItems' => $total,
+				));
 				foreach($this->getColumns() as $column) {
 					$colContent = $this->getColumnContent($record, $column);
 					// A return value of null means this columns should be skipped altogether.
-					if($colContent === null) continue;
-					$colAttributes = $this->getColumnAttributes($record, $column);
-					$rowContent .= FormField::create_tag('td', $colAttributes, $colContent);
+					if($colContent === null)
+						continue;
+					$colAttributes = ArrayList::create();
+					foreach ($this->getColumnAttributes($record, $column) as $key => $value) {
+						$colAttributes->push(ArrayData::create(array(
+							 'Key' => $key,
+							 'Value' => $value,
+						)));
+					}
+					$row->Fields->push(ArrayData::create(array(
+						'Value' => $colContent,
+					   	'Attributes' => $colAttributes,
+					)));
 				}
-				$classes = array('ss-gridfield-item');
-				if ($idx == 0) $classes[] = 'first';
-				if ($idx == $total-1) $classes[] = 'last';
-				$classes[] = ($idx % 2) ? 'even' : 'odd';
-				$row = FormField::create_tag(
-					'tr',
-					array(
-						"class" => implode(' ', $classes),
-						'data-id' => $record->ID,
-						// TODO Allow per-row customization similar to GridFieldDataColumns
-						'data-class' => $record->ClassName,
-					),
-					$rowContent
-				);
-				$rows[] = $row;
+				$rows[] = $row->renderWith($this->getRowTemplate());
 			}
-			$content['body'] = implode("\n", $rows);
+			$content['body'] = implode("\r\n", $rows);
 		} 
 		
 		// Display a message when the grid field is empty
