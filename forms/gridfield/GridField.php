@@ -449,12 +449,14 @@ class GridField extends FormField {
 	}
 
 	public function getTableAttributes() {
-		return array(
-			'id' => isset($this->id) ? $this->id : null,
+		$return = array(
 			'class' => 'ss-gridfield-table',
 			'cellpadding' => '0',
 			'cellspacing' => '0',
 		);
+		if (isset($this->id))
+			$return['id'] = $this->id;
+		return $return;
 	}
 
 	/**
